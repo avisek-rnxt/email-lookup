@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.turbo
+.env*.local
+*.log
+.DS_Store
+
+# build artifacts
+tsconfig.tsbuildinfo
+
+# local tooling (Claude Code harness, agent configs, skill locks)
+.claude/
+.agents/
+skills-lock.json
