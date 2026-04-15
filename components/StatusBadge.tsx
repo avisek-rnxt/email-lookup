@@ -7,11 +7,12 @@ export function StatusBadge({ status }: { status: string }) {
     <motion.span
       key={status}
       className={`badge ${cls}`}
+      title={status}
       initial={{ scale: 0.6, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 520, damping: 26 }}
     >
-      {status}
+      <span className="badge-label">{status}</span>
     </motion.span>
   );
 }

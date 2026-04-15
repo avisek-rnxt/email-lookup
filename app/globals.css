@@ -3,40 +3,9 @@
    A refined SaaS aesthetic: cream paper, ink, persimmon accent.
    ============================================================ */
 
-:root, [data-theme="light"] {
-  color-scheme: light;
-  /* core surface — light */
-  --paper: #f6f3ec;
-  --paper-2: #efeadf;
-  --paper-3: #e7e0d2;
-  --ink: #0e0e0c;
-  --ink-2: #2a2a26;
-  --ink-3: #56564f;
-  --ink-4: #8a897e;
-  --line: rgba(14, 14, 12, 0.10);
-  --line-strong: rgba(14, 14, 12, 0.22);
-  --line-soft: rgba(14, 14, 12, 0.05);
-  --grain: rgba(14, 14, 12, 0.06);
-
-  /* signature accent */
-  --persimmon: #e0481e;
-  --persimmon-ink: #b53513;
-  --persimmon-soft: rgba(224, 72, 30, 0.10);
-
-  /* status palette */
-  --sage: #246c53;
-  --sage-soft: rgba(36, 108, 83, 0.10);
-  --amber: #b27a14;
-  --amber-soft: rgba(178, 122, 20, 0.10);
-  --brick: #a83422;
-  --brick-soft: rgba(168, 52, 34, 0.10);
-  --slate: #56564f;
-  --slate-soft: rgba(86, 86, 79, 0.10);
-}
-
-[data-theme="dark"] {
+:root {
   color-scheme: dark;
-  /* core surface — dark */
+  /* core surface */
   --paper: #0d0d0c;
   --paper-2: #161614;
   --paper-3: #20201d;
@@ -49,12 +18,12 @@
   --line-soft: rgba(236, 232, 222, 0.05);
   --grain: rgba(236, 232, 222, 0.05);
 
-  /* accent stays warm but slightly brighter */
+  /* signature accent */
   --persimmon: #f06237;
   --persimmon-ink: #d94d22;
   --persimmon-soft: rgba(240, 98, 55, 0.14);
 
-  /* status — punched up for dark bg */
+  /* status palette */
   --sage: #5dbf95;
   --sage-soft: rgba(93, 191, 149, 0.14);
   --amber: #e2b052;
@@ -64,7 +33,7 @@
   --slate: #8a877d;
   --slate-soft: rgba(138, 135, 125, 0.14);
 
-  /* type — next/font sets --font-ui and --font-mono on <html> */
+  /* type — next/font sets --font-mono on <html> */
 
   /* layout */
   --sidebar-w: 232px;
@@ -80,8 +49,7 @@ html, body {
   padding: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-ui), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-feature-settings: 'ss01';
+  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -359,7 +327,7 @@ body {
 
 /* ----- page header ----- */
 .page {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 56px 32px 80px;
   width: 100%;
@@ -453,7 +421,6 @@ body {
   letter-spacing: -0.015em;
 }
 .stat-value .unit {
-  font-family: var(--font-ui);
   font-size: 12px;
   color: var(--ink-4);
   margin-left: 4px;
@@ -556,7 +523,6 @@ input, select, textarea {
   font-size: 13.5px;
   width: 100%;
   transition: border-color 0.12s, box-shadow 0.12s, background 0.12s;
-  font-family: var(--font-ui);
 }
 input::placeholder { color: var(--ink-4); }
 input:hover { border-color: rgba(14, 14, 12, 0.32); }
@@ -740,14 +706,24 @@ input:focus {
   font-weight: 500;
   letter-spacing: 0;
   border: 1px solid transparent;
-  font-family: var(--font-ui);
   text-transform: lowercase;
+  white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  vertical-align: middle;
 }
 .badge::before {
   content: '';
   width: 6px; height: 6px;
   border-radius: 50%;
   background: currentColor;
+  flex-shrink: 0;
+}
+.badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .badge.valid {
   background: var(--sage-soft);
@@ -778,43 +754,20 @@ input:focus {
 }
 
 /* ===========================================================
-   CONFIDENCE BAR
+   CONFIDENCE PERCENTAGE
    =========================================================== */
-.conf {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  max-width: 280px;
-}
-.conf-track {
-  position: relative;
-  flex: 1;
-  height: 6px;
-  background: var(--paper-3);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-}
-.conf-fill {
-  height: 100%;
-  background: var(--ink);
-  border-radius: 999px;
-}
-.conf-fill.high { background: var(--sage); }
-.conf-fill.med { background: var(--amber); }
-.conf-fill.low { background: var(--brick); }
-.conf-text {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--ink-2);
+.conf-pct {
+  display: inline-block;
   font-variant-numeric: tabular-nums;
-  min-width: 34px;
-  text-align: right;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
 }
-.conf.small { max-width: 120px; }
-.conf.small .conf-track { height: 4px; }
-.conf.small .conf-text { font-size: 10.5px; min-width: 30px; }
+.conf-pct.high { color: var(--sage); }
+.conf-pct.med  { color: var(--amber); }
+.conf-pct.low  { color: var(--brick); }
+.conf-pct.small { font-size: 11.5px; }
 
 /* ===========================================================
    DROP ZONE
@@ -918,7 +871,18 @@ input:focus {
   overflow: hidden;
   background: var(--paper);
 }
-table { width: 100%; border-collapse: collapse; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.trunc {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cell-name { width: 22%; }
+.cell-domain { width: 18%; }
+.cell-email { width: auto; }
 th, td {
   text-align: left;
   padding: 11px 16px;

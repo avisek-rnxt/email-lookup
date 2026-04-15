@@ -10,37 +10,40 @@ type RowState = 'pending' | 'processing' | 'done';
 type InRow = { uuid: string; firstName: string; lastName: string; domain: string };
 type Out = { email: string; status: 'valid' | 'accept-all' | 'not found'; confidence: number } | null;
 
-const REQUIRED = ['uuid', 'first name', 'last name', 'domain'];
+const REQUIRED = ['uuid', 'first name', 'last name', 'domain'] as const;
+const REQUIRED_LABEL = 'UUID, First Name, Last Name, Domain';
 
-function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.replace(/\r\n/g, '\n').split('\n').filter((l) => l.length > 0);
-  if (!lines.length) return [];
-  const parseLine = (line: string) => {
-    const out: string[] = [];
-    let cur = '';
-    let inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (inQ) {
-        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (c === '"') inQ = false;
-        else cur += c;
-      } else {
-        if (c === '"') inQ = true;
-        else if (c === ',') { out.push(cur); cur = ''; }
-        else cur += c;
-      }
+function parseCSVLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { out.push(cur); cur = ''; }
+      else cur += c;
     }
-    out.push(cur);
-    return out;
-  };
-  const headers = parseLine(lines[0]).map((h) => h.trim());
-  return lines.slice(1).map((line) => {
-    const cols = parseLine(line);
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  const lines = text.replace(/\r\n/g, '\n').split('\n').filter((l) => l.length > 0);
+  if (!lines.length) return { headers: [], rows: [] };
+  const headers = parseCSVLine(lines[0]).map((h) => h.trim());
+  const rows = lines.slice(1).map((line) => {
+    const cols = parseCSVLine(line);
     const row: Record<string, string> = {};
     headers.forEach((h, i) => { row[h] = (cols[i] ?? '').trim(); });
     return row;
   });
+  return { headers, rows };
 }
 
 function pick(row: Record<string, string>, name: string): string {
@@ -89,16 +92,29 @@ export default function BatchLookup() {
     setImporting(true);
     await new Promise((r) => setTimeout(r, 420));
     try {
+      if (!/\.csv$/i.test(file.name) && file.type && !/csv/i.test(file.type)) {
+        throw new Error(`Not a CSV file. Got "${file.name}".`);
+      }
       const text = await file.text();
-      const parsed = parseCSV(text);
-      if (!parsed.length) throw new Error('Empty CSV.');
-      const headers = new Set(Object.keys(parsed[0]).map((h) => h.toLowerCase().trim()));
-      const missing = REQUIRED.filter((r) => !headers.has(r));
-      if (missing.length)
+      const { headers, rows: parsedRows } = parseCSV(text);
+      if (!headers.length) {
+        throw new Error(`File is empty. Required columns: ${REQUIRED_LABEL}.`);
+      }
+      const headerSet = new Set(headers.map((h) => h.toLowerCase().trim()));
+      const missing = REQUIRED.filter((r) => !headerSet.has(r));
+      if (missing.length) {
+        const missingLabels = missing
+          .map((m) => m.replace(/\b\w/g, (c) => c.toUpperCase()))
+          .join(', ');
         throw new Error(
-          `Missing columns: ${missing.join(', ')}. Required: UUID, First Name, Last Name, Domain.`,
+          `Rejected — missing required column(s): ${missingLabels}. ` +
+          `Required: ${REQUIRED_LABEL}. Found: ${headers.join(', ') || '(none)'}.`,
         );
-      const inRows: InRow[] = parsed.map((r) => ({
+      }
+      if (!parsedRows.length) {
+        throw new Error('CSV has headers but no data rows.');
+      }
+      const inRows: InRow[] = parsedRows.map((r) => ({
         uuid: pick(r, 'UUID'),
         firstName: pick(r, 'First Name'),
         lastName: pick(r, 'Last Name'),
@@ -337,7 +353,7 @@ export default function BatchLookup() {
                       <th>Domain</th>
                       <th>Email</th>
                       <th style={{ width: 110 }}>Status</th>
-                      <th style={{ width: 150 }}>Confidence</th>
+                      <th style={{ width: 90 }}>Confidence</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -361,13 +377,19 @@ export default function BatchLookup() {
                           }}
                         >
                           <td className="mono small">{r.uuid.slice(0, 8)}</td>
-                          <td>
-                            {r.firstName} {r.lastName}
+                          <td className="cell-name">
+                            <span className="trunc" title={`${r.firstName} ${r.lastName}`}>
+                              {r.firstName} {r.lastName}
+                            </span>
                           </td>
-                          <td className="mono">{r.domain}</td>
-                          <td className="mono">
+                          <td className="mono cell-domain">
+                            <span className="trunc" title={r.domain}>{r.domain}</span>
+                          </td>
+                          <td className="mono cell-email">
                             {out?.email ? (
                               <motion.span
+                                className="trunc"
+                                title={out.email}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                               >
